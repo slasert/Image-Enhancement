@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Face Enhancement</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0a1628;
-      color: #e0e0e0;
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      color: #1e293b;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -18,20 +19,20 @@
       padding: 40px 16px;
     }
 
-    h1 { font-size: 1.8rem; margin-bottom: 6px; color: #fff; }
-    p.sub { color: #888; margin-bottom: 32px; font-size: 0.9rem; }
+    h1 { font-size: 1.75rem; margin-bottom: 6px; color: #1e293b; font-weight: 700; }
+    p.sub { color: #94a3b8; margin-bottom: 32px; font-size: 0.88rem; }
 
     .card {
-      background: #1a1a24;
-      border: 1px solid #2a2a3a;
-      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
       padding: 28px;
       width: 100%;
       max-width: 860px;
       margin-bottom: 24px;
+      box-shadow: 0 2px 20px rgba(99,102,241,0.07);
     }
 
-    /* Upload kartı sayfa ortasında dikey olarak ortalanır */
     .upload-card {
       position: fixed;
       top: 50%;
@@ -39,11 +40,12 @@
       transform: translate(-50%, -50%);
       width: 90%;
       max-width: 540px;
-      background: #1a1a24;
-      border: 1px solid #2a2a3a;
-      border-radius: 14px;
-      padding: 36px 28px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 38px 32px;
       z-index: 10;
+      box-shadow: 0 8px 40px rgba(99,102,241,0.10);
       transition: opacity 0.3s, transform 0.3s;
     }
     .upload-card.hidden {
@@ -55,16 +57,20 @@
     .upload-card p.sub { text-align: center; }
 
     .upload-area {
-      border: 2px dashed #3a3a55;
-      border-radius: 10px;
+      border: 2px dashed #c7d2fe;
+      border-radius: 12px;
       padding: 52px 40px;
       text-align: center;
       cursor: pointer;
+      background: #f8f9ff;
       transition: border-color 0.2s, background 0.2s;
     }
-    .upload-area:hover, .upload-area.dragover { border-color: #7c6ef7; }
-    .upload-area span { color: #888; font-size: 0.95rem; }
-    .upload-area strong { color: #a89df7; }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: #6366f1;
+      background: #f0f0ff;
+    }
+    .upload-area span { color: #94a3b8; font-size: 0.95rem; }
+    .upload-area strong { color: #6366f1; }
 
     input[type="file"] { display: none; }
 
@@ -81,8 +87,8 @@
       margin-top: 16px;
       border-radius: 10px;
       overflow: hidden;
-      background: #0a0a10;
-      border: 1px solid #2a2a3a;
+      background: #f8f9ff;
+      border: 1px solid #e2e8f0;
     }
     .preview-box img {
       width: 100%;
@@ -92,24 +98,35 @@
     }
 
     button {
-      background: #22c55e;
+      background: #6366f1;
       color: #fff;
       border: none;
       padding: 10px 28px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.95rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, box-shadow 0.2s;
       flex: 1;
       min-width: 140px;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.25);
     }
-    button:hover:not(:disabled) { background: #16a34a; }
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:hover:not(:disabled) {
+      background: #4f46e5;
+      box-shadow: 0 4px 18px rgba(99,102,241,0.35);
+    }
+    button:disabled { opacity: 0.40; cursor: not-allowed; box-shadow: none; }
 
     button.btn-gray {
-      background: #4b5563;
+      background: #f1f5f9;
+      color: #475569;
+      box-shadow: none;
+      border: 1px solid #e2e8f0;
     }
-    button.btn-gray:hover:not(:disabled) { background: #374151; }
+    button.btn-gray:hover:not(:disabled) {
+      background: #e2e8f0;
+      box-shadow: none;
+    }
 
     .results { display: none; }
 
@@ -121,25 +138,26 @@
     }
 
     .img-box {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 10px;
+      background: #f8f9ff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
       overflow: hidden;
     }
     .img-box .label {
       padding: 8px 14px;
-      font-size: 0.78rem;
-      color: #888;
-      border-bottom: 1px solid #2a2a3a;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      border-bottom: 1px solid #e2e8f0;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.07em;
+      font-weight: 600;
     }
     .img-box img {
       width: 100%;
       display: block;
       max-height: 340px;
       object-fit: contain;
-      background: #0a0a10;
+      background: #f0f4ff;
     }
 
     .metrics {
@@ -149,31 +167,32 @@
     }
 
     .metric-card {
-      background: #12121a;
-      border: 1px solid #2a2a3a;
-      border-radius: 10px;
+      background: #f8f9ff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
       padding: 16px;
       text-align: center;
     }
     .metric-card .val {
       font-size: 1rem;
       font-weight: 700;
-      color: #a89df7;
+      color: #6366f1;
       white-space: nowrap;
     }
     .metric-card .name {
-      font-size: 0.75rem;
-      color: #666;
+      font-size: 0.72rem;
+      color: #94a3b8;
       margin-top: 4px;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
+      font-weight: 600;
     }
 
     .spinner {
       display: none;
       width: 22px; height: 22px;
-      border: 3px solid #3a3a55;
-      border-top-color: #7c6ef7;
+      border: 3px solid #e2e8f0;
+      border-top-color: #6366f1;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       margin: 0 auto;
@@ -181,7 +200,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .error-msg {
-      color: #f07070;
+      color: #ef4444;
       font-size: 0.88rem;
       margin-top: 10px;
       display: none;
