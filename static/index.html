@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Enhancement</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a1628;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    h1 { font-size: 1.8rem; margin-bottom: 6px; color: #fff; }
+    p.sub { color: #888; margin-bottom: 32px; font-size: 0.9rem; }
+
+    .card {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 14px;
+      padding: 28px;
+      width: 100%;
+      max-width: 860px;
+      margin-bottom: 24px;
+    }
+
+    /* Upload kartı sayfa ortasında dikey olarak ortalanır */
+    .upload-card {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 540px;
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 14px;
+      padding: 36px 28px;
+      z-index: 10;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .upload-card.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -48%) scale(0.97);
+    }
+    .upload-card h1 { text-align: center; margin-bottom: 6px; }
+    .upload-card p.sub { text-align: center; }
+
+    .upload-area {
+      border: 2px dashed #3a3a55;
+      border-radius: 10px;
+      padding: 52px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .upload-area:hover, .upload-area.dragover { border-color: #7c6ef7; }
+    .upload-area span { color: #888; font-size: 0.95rem; }
+    .upload-area strong { color: #a89df7; }
+
+    input[type="file"] { display: none; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .preview-box {
+      display: none;
+      margin-top: 16px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0a0a10;
+      border: 1px solid #2a2a3a;
+    }
+    .preview-box img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      display: block;
+    }
+
+    button {
+      background: #22c55e;
+      color: #fff;
+      border: none;
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex: 1;
+      min-width: 140px;
+    }
+    button:hover:not(:disabled) { background: #16a34a; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    button.btn-gray {
+      background: #4b5563;
+    }
+    button.btn-gray:hover:not(:disabled) { background: #374151; }
+
+    .results { display: none; }
+
+    .image-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .img-box {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .img-box .label {
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      color: #888;
+      border-bottom: 1px solid #2a2a3a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .img-box img {
+      width: 100%;
+      display: block;
+      max-height: 340px;
+      object-fit: contain;
+      background: #0a0a10;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .metric-card .val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #a89df7;
+      white-space: nowrap;
+    }
+    .metric-card .name {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .spinner {
+      display: none;
+      width: 22px; height: 22px;
+      border: 3px solid #3a3a55;
+      border-top-color: #7c6ef7;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      color: #f07070;
+      font-size: 0.88rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    @media (max-width: 540px) {
+      .image-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sayfa ortasında upload kartı -->
+  <div class="upload-card" id="uploadCard">
+    <h1>Face Enhancement</h1>
+    <p class="sub">LAB · CLAHE · Bilateral · SSIM / PSNR</p>
+
+    <div class="upload-area" id="uploadArea" style="margin-top:24px">
+      <input type="file" id="fileInput" accept="image/*" />
+      <span>Drag your image here or <strong>click to upload</strong></span>
+    </div>
+
+    <div class="preview-box" id="previewBox">
+      <img id="previewImg" alt="preview" />
+    </div>
+
+    <div class="controls">
+      <button id="enhanceBtn" disabled>Enhance</button>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <div class="card results" id="results" style="margin-top:24px">
+    <div class="image-row">
+      <div class="img-box">
+        <div class="label">Original</div>
+        <img id="origImg" src="" alt="original" />
+      </div>
+      <div class="img-box">
+        <div class="label">Enhanced</div>
+        <img id="enhImg" src="" alt="enhanced" />
+      </div>
+    </div>
+
+    <div class="metrics" id="metricsRow"></div>
+
+    <div style="margin-top:20px; text-align:center;">
+      <button id="newImageBtn" class="btn-gray" style="max-width:260px; flex:none;">
+        ↑ Upload a new image
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // If opened as a local file (double-click), redirect to the server
+    if (window.location.protocol === 'file:') {
+      window.location.replace('http://localhost:8000');
+    }
+
+    const uploadCard  = document.getElementById('uploadCard');
+    const uploadArea  = document.getElementById('uploadArea');
+    const fileInput   = document.getElementById('fileInput');
+    const enhanceBtn  = document.getElementById('enhanceBtn');
+    const newImageBtn = document.getElementById('newImageBtn');
+    const previewBox  = document.getElementById('previewBox');
+    const previewImg  = document.getElementById('previewImg');
+    const spinner     = document.getElementById('spinner');
+    const errorMsg    = document.getElementById('errorMsg');
+    const results     = document.getElementById('results');
+    const origImg     = document.getElementById('origImg');
+    const enhImg      = document.getElementById('enhImg');
+    const metricsRow  = document.getElementById('metricsRow');
+
+    let selectedFile = null;
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const f = e.dataTransfer.files[0];
+      if (f) setFile(f);
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) setFile(fileInput.files[0]);
+    });
+
+    function setFile(f) {
+      selectedFile = f;
+      uploadArea.querySelector('span').innerHTML = `<strong>${f.name}</strong> selected`;
+      enhanceBtn.disabled = false;
+
+      const url = URL.createObjectURL(f);
+      origImg.src  = url;
+      previewImg.src = url;
+      previewBox.style.display = 'block';
+
+      results.style.display = 'none';
+      enhImg.src = '';
+      metricsRow.innerHTML = '';
+    }
+
+    enhanceBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      errorMsg.style.display = 'none';
+      spinner.style.display  = 'block';
+      enhanceBtn.disabled    = true;
+
+      const form = new FormData();
+      form.append('file', selectedFile);
+
+      try {
+        const res = await fetch('/enhance/metrics?mode=combined', {
+          method: 'POST',
+          body: form,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Server error');
+        }
+
+        const data = await res.json();
+
+        enhImg.src = `data:image/jpeg;base64,${data.enhanced_image}`;
+
+        const m = data.metrics;
+        metricsRow.innerHTML = `
+          ${metricCard(m.psnr_db + ' dB', 'PSNR')}
+          ${metricCard(m.ssim, 'SSIM')}
+          ${metricCard(m.psnr_per_channel.B + ' dB', 'PSNR · B')}
+          ${metricCard(m.psnr_per_channel.G + ' dB', 'PSNR · G')}
+          ${metricCard(m.psnr_per_channel.R + ' dB', 'PSNR · R')}
+        `;
+
+        uploadCard.classList.add('hidden');
+        results.style.display = 'block';
+      } catch (e) {
+        errorMsg.textContent   = e.message;
+        errorMsg.style.display = 'block';
+      } finally {
+        spinner.style.display = 'none';
+        enhanceBtn.disabled   = false;
+      }
+    });
+
+    function metricCard(val, name) {
+      return `<div class="metric-card"><div class="val">${val}</div><div class="name">${name}</div></div>`;
+    }
+
+    newImageBtn.addEventListener('click', () => {
+      results.style.display = 'none';
+      uploadCard.classList.remove('hidden');
+      previewBox.style.display = 'none';
+      uploadArea.querySelector('span').innerHTML = `Drag your image here or <strong>click to upload</strong>`;
+      enhanceBtn.disabled = true;
+      fileInput.value = '';
+      selectedFile = null;
+      origImg.src = '';
+      enhImg.src = '';
+      metricsRow.innerHTML = '';
+      errorMsg.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
