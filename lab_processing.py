@@ -259,12 +259,13 @@ def face_enhance(image: np.ndarray, sr_scale: int = 2) -> np.ndarray:
     if image is None or image.ndim != 3:
         raise ValueError("Gecerli bir BGR goruntusu (H x W x 3) giriniz.")
 
-    # 1. Hafif color-aware denoising (full_enhance'deki h=8 cok agresifti)
+    # 1. Hafif color-aware denoising. Search/template window kuculttuk:
+    # Render free tier 0.1 CPU + 512 MB ile 21 cok agir. 11/5 yeterli.
     denoised = cv2.fastNlMeansDenoisingColored(
         image, None,
         h=5, hColor=5,
-        templateWindowSize=7,
-        searchWindowSize=21,
+        templateWindowSize=5,
+        searchWindowSize=11,
     )
 
     # 2. CLAHE on L only - renk bozulmasi olmaz

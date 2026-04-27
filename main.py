@@ -18,7 +18,7 @@ ENHANCE_MODES = {
 }
 
 
-MAX_INPUT_DIM = 1200  # Boyutu sinirla: Render free tier RAM + iOS Safari data URL limiti
+MAX_INPUT_DIM = 800  # Render free tier (512 MB RAM) icin sinir; SR x2 ile cikti 1600px
 
 
 def decode_image(data: bytes) -> np.ndarray:
