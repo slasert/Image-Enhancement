@@ -18,11 +18,20 @@ ENHANCE_MODES = {
 }
 
 
+MAX_INPUT_DIM = 1200  # Boyutu sinirla: Render free tier RAM + iOS Safari data URL limiti
+
+
 def decode_image(data: bytes) -> np.ndarray:
     arr = np.frombuffer(data, dtype=np.uint8)
     img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
     if img is None:
         raise HTTPException(status_code=400, detail="Gecersiz goruntu dosyasi.")
+
+    h, w = img.shape[:2]
+    if max(h, w) > MAX_INPUT_DIM:
+        scale = MAX_INPUT_DIM / max(h, w)
+        img = cv2.resize(img, (int(w * scale), int(h * scale)),
+                         interpolation=cv2.INTER_AREA)
     return img
 
 
