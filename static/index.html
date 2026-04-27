@@ -308,6 +308,40 @@
       metricsRow.innerHTML = '';
     }
 
+    // Client-side resize: mobile cihazlarda 4-8 MB fotograflar upload sirasinda
+    // takiliyordu. Canvas uzerinden gecirmek HEIC -> JPEG donusumu de yapar.
+    async function downscaleFile(file, maxDim = 1200) {
+      const objUrl = URL.createObjectURL(file);
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const i = new Image();
+          i.onload  = () => resolve(i);
+          i.onerror = () => reject(new Error('Goruntu yuklenemedi (format desteklenmiyor olabilir).'));
+          i.src = objUrl;
+        });
+
+        const longest = Math.max(img.naturalWidth, img.naturalHeight);
+        const scale   = longest > maxDim ? maxDim / longest : 1;
+        const w = Math.round(img.naturalWidth  * scale);
+        const h = Math.round(img.naturalHeight * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+        const blob = await new Promise((resolve, reject) =>
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('JPEG olusturulamadi.')),
+                        'image/jpeg', 0.92)
+        );
+        return new File([blob], (file.name || 'image').replace(/\.[^.]+$/, '') + '.jpg',
+                        { type: 'image/jpeg' });
+      } finally {
+        URL.revokeObjectURL(objUrl);
+      }
+    }
+
+    let lastEnhancedUrl = null;
     enhanceBtn.addEventListener('click', async () => {
       if (!selectedFile) return;
 
@@ -315,10 +349,20 @@
       spinner.style.display  = 'block';
       enhanceBtn.disabled    = true;
 
-      const form = new FormData();
-      form.append('file', selectedFile);
+      let uploadFile;
+      try {
+        uploadFile = await downscaleFile(selectedFile, 1200);
+      } catch (e) {
+        console.error('Downscale failed:', e);
+        errorMsg.textContent   = e.message || 'Goruntu hazirlanamadi.';
+        errorMsg.style.display = 'block';
+        spinner.style.display  = 'none';
+        enhanceBtn.disabled    = false;
+        return;
+      }
 
-      let lastEnhancedUrl = null;
+      const form = new FormData();
+      form.append('file', uploadFile);
       try {
         const res = await fetch('/enhance/metrics?mode=combined', {
           method: 'POST',
