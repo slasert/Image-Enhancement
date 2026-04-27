@@ -210,6 +210,125 @@
     @media (max-width: 540px) {
       .image-row { grid-template-columns: 1fr; }
     }
+
+    /* Chat panel */
+    .chat-card { display: none; }
+    .chat-card.visible { display: block; }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .chat-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .chat-header .badge {
+      font-size: 0.68rem;
+      color: #6366f1;
+      background: #eef2ff;
+      padding: 3px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .chat-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .chip {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .chip:hover { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
+
+    .chat-log {
+      background: #f8f9ff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      max-height: 360px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .chat-log:empty::before {
+      content: 'Bir soru sor — modlar, metrikler, teknikler hakkinda.';
+      color: #94a3b8;
+      font-size: 0.88rem;
+      text-align: center;
+      padding: 18px 8px;
+    }
+
+    .chat-msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: #6366f1;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-msg.assistant {
+      align-self: flex-start;
+      background: #fff;
+      color: #1e293b;
+      border: 1px solid #e2e8f0;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.assistant.streaming::after {
+      content: '▍';
+      color: #6366f1;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-row input {
+      flex: 1;
+      padding: 11px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      background: #fff;
+      color: #1e293b;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .chat-input-row input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .chat-input-row button {
+      flex: 0 0 auto;
+      min-width: 90px;
+      padding: 11px 20px;
+    }
   </style>
 </head>
 <body>
@@ -255,6 +374,27 @@
         ↑ Upload a new image
       </button>
     </div>
+  </div>
+
+  <div class="card chat-card" id="chatCard">
+    <div class="chat-header">
+      <h2>Image Enhancement Assistant</h2>
+      <span class="badge">AI</span>
+    </div>
+
+    <div class="chat-suggestions" id="chatSuggestions">
+      <button class="chip" data-prompt="Bu metrikler ne anlama geliyor?">Metrikleri yorumla</button>
+      <button class="chip" data-prompt="Hangi mod benim icin daha uygun?">Hangi mod?</button>
+      <button class="chip" data-prompt="CLAHE nasil calisir?">CLAHE nedir?</button>
+      <button class="chip" data-prompt="LAB renk uzayi neden kullaniliyor?">LAB neden?</button>
+    </div>
+
+    <div class="chat-log" id="chatLog"></div>
+
+    <form class="chat-input-row" id="chatForm" autocomplete="off">
+      <input id="chatInput" type="text" placeholder="Sorunu yaz..." />
+      <button type="submit" id="chatSend">Gonder</button>
+    </form>
   </div>
 
   <script>
@@ -400,6 +540,7 @@
 
         uploadCard.classList.add('hidden');
         results.style.display = 'block';
+        showChatPanel({ mode: 'combined', metrics: m });
       } catch (e) {
         console.error('Enhance failed:', e);
         errorMsg.textContent   = e.message || String(e);
@@ -426,6 +567,125 @@
       enhImg.src = '';
       metricsRow.innerHTML = '';
       errorMsg.style.display = 'none';
+      resetChat();
+    });
+
+    // ---- Chat (Image Enhancement Assistant) -------------------------------
+    const chatCard   = document.getElementById('chatCard');
+    const chatLog    = document.getElementById('chatLog');
+    const chatForm   = document.getElementById('chatForm');
+    const chatInput  = document.getElementById('chatInput');
+    const chatSend   = document.getElementById('chatSend');
+    const chatChips  = document.getElementById('chatSuggestions');
+
+    let chatHistory = [];     // [{role, content}]
+    let chatContext = null;   // string: mode + metrics summary
+    let chatBusy    = false;
+
+    function showChatPanel({ mode, metrics }) {
+      const parts = [`Mode used: ${mode}`];
+      if (metrics) {
+        const psnr = metrics.psnr_db;
+        const ssim = metrics.ssim;
+        if (psnr != null) parts.push(`PSNR: ${psnr} dB`);
+        if (ssim != null) parts.push(`SSIM: ${ssim}`);
+        if (metrics.psnr_per_channel) {
+          const p = metrics.psnr_per_channel;
+          parts.push(`PSNR per channel: B=${p.B} G=${p.G} R=${p.R} dB`);
+        }
+      }
+      chatContext = parts.join(' | ');
+      chatCard.classList.add('visible');
+    }
+
+    function resetChat() {
+      chatHistory = [];
+      chatContext = null;
+      chatLog.innerHTML = '';
+      chatCard.classList.remove('visible');
+    }
+
+    function appendMsg(role, text) {
+      const div = document.createElement('div');
+      div.className = `chat-msg ${role}`;
+      div.textContent = text;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return div;
+    }
+
+    async function sendChat(prompt) {
+      if (chatBusy || !prompt.trim()) return;
+      chatBusy = true;
+      chatSend.disabled = true;
+      chatInput.disabled = true;
+
+      const userText = prompt.trim();
+      chatHistory.push({ role: 'user', content: userText });
+      appendMsg('user', userText);
+
+      const assistantNode = appendMsg('assistant', '');
+      assistantNode.classList.add('streaming');
+
+      let assistantText = '';
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: chatHistory,
+            context: chatContext,
+          }),
+        });
+
+        if (!res.ok || !res.body) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          assistantText += chunk;
+          assistantNode.textContent = assistantText;
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+        const tail = decoder.decode();
+        if (tail) {
+          assistantText += tail;
+          assistantNode.textContent = assistantText;
+        }
+
+        if (assistantText.trim()) {
+          chatHistory.push({ role: 'assistant', content: assistantText });
+        } else {
+          assistantNode.textContent = '[bos yanit]';
+        }
+      } catch (e) {
+        console.error('Chat error:', e);
+        assistantNode.textContent = `[Hata] ${e.message || e}`;
+      } finally {
+        assistantNode.classList.remove('streaming');
+        chatBusy = false;
+        chatSend.disabled = false;
+        chatInput.disabled = false;
+        chatInput.focus();
+      }
+    }
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = chatInput.value;
+      chatInput.value = '';
+      sendChat(text);
+    });
+
+    chatChips.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip');
+      if (!btn) return;
+      sendChat(btn.dataset.prompt);
     });
   </script>
 </body>

@@ -4,9 +4,11 @@ import numpy as np
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from lab_processing import process_l_channel, clahe_enhance, bilateral_enhance, face_enhance
 from metrics import compute_metrics
+from chat import stream_chat
 
 app = FastAPI(title="Face Enhancement API", version="1.0.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -109,3 +111,38 @@ async def enhance_with_metrics(
         "metrics":         metrics,
         "enhanced_image":  base64.b64encode(output).decode("utf-8"),
     }
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    context: str | None = None
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    """
+    Image Enhancement Assistant ile sohbet et. Yanit metni stream olarak akar.
+
+    - **messages**: `[{role: "user"|"assistant", content: "..."}]`
+    - **context**: opsiyonel oturum baglami (kullanilan mod, metrikler vb.)
+    """
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="En az bir mesaj gereklidir.")
+
+    payload = [{"role": m.role, "content": m.content} for m in req.messages]
+
+    async def generate():
+        try:
+            async for chunk in stream_chat(payload, context=req.context):
+                yield chunk
+        except RuntimeError as e:
+            yield f"\n[Hata] {e}"
+        except Exception as e:
+            yield f"\n[Hata] Sohbet servisine ulasilamadi: {e}"
+
+    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")

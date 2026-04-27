@@ -71,6 +71,28 @@ Upload an image and receive the enhanced image + quality metrics in JSON.
 
 ---
 
+### `POST /chat`
+Chat with the **Image Enhancement Assistant** — an AI guide that explains techniques (CLAHE, MSRCR, FFT, LAB color space), interprets metrics, and recommends the best mode for a given image.
+
+**Request body (JSON):**
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Why is my SSIM so low?" }
+  ],
+  "context": "Mode used: combined | PSNR: 28.4 dB | SSIM: 0.71"
+}
+```
+
+- `messages` — chat history, alternating `user` / `assistant`
+- `context` — optional session context (current mode, metrics) so the assistant can answer with concrete numbers
+
+**Response:** plain-text **streamed** response (`text/plain; charset=utf-8`). The assistant runs on Anthropic's Claude API and requires the `ANTHROPIC_API_KEY` environment variable.
+
+The browser UI exposes this automatically — after enhancing an image, a chat panel appears with quick-prompt chips (mode advice, metric interpretation, technique explanations).
+
+---
+
 ## LAB Color Space
 
 All processing is performed in **CIE LAB** color space:
@@ -94,10 +116,11 @@ my ai proje/
 ├── main.py            # FastAPI app — routes and endpoint logic
 ├── lab_processing.py  # All image processing algorithms
 ├── metrics.py         # SSIM / PSNR computation
+├── chat.py            # Claude-powered Image Enhancement Assistant
 ├── requirements.txt   # Python dependencies
 ├── start.bat          # One-click launcher (Windows)
 └── static/
-    ├── index.html     # Browser UI
+    ├── index.html     # Browser UI (incl. chat panel)
     ├── script.js      # Frontend logic
     └── style.css      # Styling
 ```
@@ -113,6 +136,7 @@ my ai proje/
 | OpenCV | Image processing (CLAHE, bilateral, FFT, etc.) |
 | NumPy | Array operations and mathematical transforms |
 | scikit-image | SSIM metric computation |
+| Anthropic SDK | Claude API for the in-app Image Enhancement Assistant |
 
 ---
 
@@ -126,15 +150,23 @@ cd image-enhancement
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Start the server
+# 3. Set your Anthropic API key (required for /chat — the AI assistant)
+#    macOS / Linux:
+export ANTHROPIC_API_KEY=sk-ant-...
+#    Windows (cmd):
+set ANTHROPIC_API_KEY=sk-ant-...
+#    Windows (PowerShell):
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+# 4. Start the server
 uvicorn main:app --reload
 
-# 4. Open in browser
+# 5. Open in browser
 # → http://localhost:8000
 # → http://localhost:8000/docs  (interactive API docs)
 ```
 
-Or on Windows, simply double-click **`start.bat`**.
+Or on Windows, simply double-click **`start.bat`**. (The `/chat` endpoint will return an error message until `ANTHROPIC_API_KEY` is set; the rest of the app works without it.)
 
 ---
 
