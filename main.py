@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from lab_processing import process_l_channel, clahe_enhance, bilateral_enhance, full_enhance
+from lab_processing import process_l_channel, clahe_enhance, bilateral_enhance, face_enhance
 from metrics import compute_metrics
 
 app = FastAPI(title="Face Enhancement API", version="1.0.0")
@@ -14,7 +14,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 ENHANCE_MODES = {
     "clahe":     lambda img: process_l_channel(img, enhance_fn=lambda l: clahe_enhance(l, clip_limit=0.02)),
     "bilateral": lambda img: process_l_channel(img, enhance_fn=lambda l: bilateral_enhance(l, smoothing_degree=0.01)),
-    "combined":  full_enhance,
+    "combined":  face_enhance,
 }
 
 
@@ -79,8 +79,20 @@ async def enhance_with_metrics(
     original = decode_image(raw)
 
     enhanced = ENHANCE_MODES[mode](original)
-    metrics  = compute_metrics(original, enhanced)
-    output   = encode_image(enhanced, ext=".jpg")
+
+    # Pipeline goruntuyu buyutmus olabilir (super-resolution). SSIM/PSNR ayni
+    # boyut ister, bu yuzden orijinali bicubic ile cikti boyutuna esitliyoruz.
+    if original.shape != enhanced.shape:
+        original_for_metrics = cv2.resize(
+            original,
+            (enhanced.shape[1], enhanced.shape[0]),
+            interpolation=cv2.INTER_CUBIC,
+        )
+    else:
+        original_for_metrics = original
+
+    metrics = compute_metrics(original_for_metrics, enhanced)
+    output  = encode_image(enhanced, ext=".jpg")
 
     return {
         "mode":            mode,
