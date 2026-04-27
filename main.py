@@ -18,7 +18,7 @@ ENHANCE_MODES = {
 }
 
 
-MAX_INPUT_DIM = 800  # Render free tier (512 MB RAM) icin sinir; SR x2 ile cikti 1600px
+MAX_INPUT_DIM = 1600  # PC icin makul ust sinir; SR x2 ile cikti 3200px
 
 
 def decode_image(data: bytes) -> np.ndarray:

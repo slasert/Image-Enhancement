@@ -310,7 +310,7 @@
 
     // Client-side resize: mobile cihazlarda 4-8 MB fotograflar upload sirasinda
     // takiliyordu. Canvas uzerinden gecirmek HEIC -> JPEG donusumu de yapar.
-    async function downscaleFile(file, maxDim = 800) {
+    async function downscaleFile(file, maxDim = 1600) {
       const objUrl = URL.createObjectURL(file);
       try {
         const img = await new Promise((resolve, reject) => {
@@ -351,7 +351,7 @@
 
       let uploadFile;
       try {
-        uploadFile = await downscaleFile(selectedFile, 800);
+        uploadFile = await downscaleFile(selectedFile, 1600);
       } catch (e) {
         console.error('Downscale failed:', e);
         errorMsg.textContent   = e.message || 'Goruntu hazirlanamadi.';
