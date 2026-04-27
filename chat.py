@@ -2,6 +2,9 @@ import os
 from typing import AsyncIterator, Optional
 
 from anthropic import AsyncAnthropic
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 SYSTEM_PROMPT = """You are the Image Enhancement Assistant — a knowledgeable guide for image processing and computer vision running inside this app. Your role is to:
@@ -59,8 +62,7 @@ A *low* SSIM/PSNR is not automatically bad — it just means the enhancement cha
 
 ## How to Help
 
-- Be concise but technically accurate. Skip preamble — answer first, then add context if useful.
-- Reply in the user's language (Turkish or English). Match their tone.
+- Always reply in English. Be concise but technically accurate. Skip preamble — answer first, then add context if useful.
 - When the user shares metrics or a mode, interpret them in context: "your SSIM is 0.62 — that's low for CLAHE; the image was probably very dark and the histogram stretched it hard."
 - Suggest mode switches when results aren't ideal. Example: high noise → Combined; subtle correction → Bilateral; uneven lighting → CLAHE or Combined.
 - Educate without lecturing. If a user asks "what is CLAHE", give a short answer and offer to go deeper.
@@ -75,8 +77,9 @@ def _get_client() -> AsyncAnthropic:
     if _client is None:
         if not os.getenv("ANTHROPIC_API_KEY"):
             raise RuntimeError(
-                "ANTHROPIC_API_KEY ortam degiskeni ayarlanmamis. "
-                "Sohbet ozelligini kullanmak icin API anahtarinizi tanimlayin."
+                "ANTHROPIC_API_KEY is not set. Create a `.env` file in the project "
+                "root with `ANTHROPIC_API_KEY=sk-ant-...` (or set the environment "
+                "variable), then restart the server."
             )
         _client = AsyncAnthropic()
     return _client

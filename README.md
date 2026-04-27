@@ -87,9 +87,9 @@ Chat with the **Image Enhancement Assistant** — an AI guide that explains tech
 - `messages` — chat history, alternating `user` / `assistant`
 - `context` — optional session context (current mode, metrics) so the assistant can answer with concrete numbers
 
-**Response:** plain-text **streamed** response (`text/plain; charset=utf-8`). The assistant runs on Anthropic's Claude API and requires the `ANTHROPIC_API_KEY` environment variable.
+**Response:** plain-text **streamed** response (`text/plain; charset=utf-8`). The assistant runs on Anthropic's Claude API. Set `ANTHROPIC_API_KEY` either in a `.env` file (recommended — see `.env.example`) or as a shell environment variable.
 
-The browser UI exposes this automatically — after enhancing an image, a chat panel appears with quick-prompt chips (mode advice, metric interpretation, technique explanations).
+The browser UI exposes this as a floating speech-bubble button in the bottom-right corner — click it to open the chat panel. After enhancing an image, the panel automatically receives session context (current mode + metrics) so the assistant can answer with concrete numbers.
 
 ---
 
@@ -151,12 +151,15 @@ cd image-enhancement
 pip install -r requirements.txt
 
 # 3. Set your Anthropic API key (required for /chat — the AI assistant)
-#    macOS / Linux:
-export ANTHROPIC_API_KEY=sk-ant-...
-#    Windows (cmd):
-set ANTHROPIC_API_KEY=sk-ant-...
-#    Windows (PowerShell):
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
+#    Easiest: copy .env.example to .env and put your key in it.
+cp .env.example .env
+#    Then edit .env and replace the placeholder. python-dotenv loads it
+#    automatically at server startup.
+#
+#    Or export it as a shell env var instead:
+#      macOS / Linux:   export ANTHROPIC_API_KEY=sk-ant-...
+#      Windows (cmd):   set ANTHROPIC_API_KEY=sk-ant-...
+#      Windows (PS):    $env:ANTHROPIC_API_KEY = "sk-ant-..."
 
 # 4. Start the server
 uvicorn main:app --reload

@@ -211,46 +211,110 @@
       .image-row { grid-template-columns: 1fr; }
     }
 
-    /* Chat panel */
-    .chat-card { display: none; }
-    .chat-card.visible { display: block; }
+    /* Chat — floating FAB + popup panel */
+    .chat-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(99,102,241,0.40);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+    }
+    .chat-fab:hover {
+      background: #4f46e5;
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 10px 28px rgba(99,102,241,0.50);
+    }
+    .chat-fab svg { width: 28px; height: 28px; }
+    .chat-fab .icon-close { display: none; }
+    .chat-fab.open .icon-bubble { display: none; }
+    .chat-fab.open .icon-close  { display: block; }
+
+    .chat-panel {
+      position: fixed;
+      bottom: 100px;
+      right: 24px;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      max-height: calc(100vh - 130px);
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      box-shadow: 0 16px 48px rgba(99,102,241,0.20);
+      z-index: 99;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-panel.open {
+      display: flex;
+      animation: chatIn 0.18s ease;
+    }
+    @keyframes chatIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     .chat-header {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8f9ff;
     }
     .chat-header h2 {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       color: #1e293b;
+      flex: 1;
     }
     .chat-header .badge {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       color: #6366f1;
       background: #eef2ff;
       padding: 3px 9px;
       border-radius: 999px;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       font-weight: 600;
       text-transform: uppercase;
+    }
+
+    .chat-body {
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
     }
 
     .chat-suggestions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 14px;
+      gap: 6px;
     }
     .chip {
       background: #f1f5f9;
       border: 1px solid #e2e8f0;
       color: #475569;
-      padding: 7px 14px;
+      padding: 6px 12px;
       border-radius: 999px;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 500;
       cursor: pointer;
+      font-family: inherit;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
     .chip:hover { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
@@ -258,28 +322,29 @@
     .chat-log {
       background: #f8f9ff;
       border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 14px;
-      max-height: 360px;
+      border-radius: 10px;
+      padding: 12px;
+      flex: 1;
+      min-height: 180px;
+      max-height: 340px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-bottom: 12px;
     }
     .chat-log:empty::before {
-      content: 'Bir soru sor — modlar, metrikler, teknikler hakkinda.';
+      content: 'Ask a question — about modes, metrics, or techniques.';
       color: #94a3b8;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       text-align: center;
       padding: 18px 8px;
     }
 
     .chat-msg {
-      max-width: 85%;
-      padding: 10px 14px;
+      max-width: 88%;
+      padding: 9px 13px;
       border-radius: 12px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       line-height: 1.5;
       white-space: pre-wrap;
       word-wrap: break-word;
@@ -310,14 +375,15 @@
     }
     .chat-input-row input {
       flex: 1;
-      padding: 11px 14px;
+      padding: 10px 13px;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-family: inherit;
       background: #fff;
       color: #1e293b;
       outline: none;
+      min-width: 0;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
     .chat-input-row input:focus {
@@ -326,8 +392,22 @@
     }
     .chat-input-row button {
       flex: 0 0 auto;
-      min-width: 90px;
-      padding: 11px 20px;
+      min-width: 78px;
+      padding: 10px 16px;
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 540px) {
+      .chat-panel {
+        right: 12px;
+        left: 12px;
+        width: auto;
+        bottom: 92px;
+      }
+      .chat-fab {
+        right: 16px;
+        bottom: 16px;
+      }
     }
   </style>
 </head>
@@ -376,26 +456,38 @@
     </div>
   </div>
 
-  <div class="card chat-card" id="chatCard">
+  <div class="chat-panel" id="chatPanel" role="dialog" aria-label="Image Enhancement Assistant">
     <div class="chat-header">
       <h2>Image Enhancement Assistant</h2>
       <span class="badge">AI</span>
     </div>
 
-    <div class="chat-suggestions" id="chatSuggestions">
-      <button class="chip" data-prompt="Bu metrikler ne anlama geliyor?">Metrikleri yorumla</button>
-      <button class="chip" data-prompt="Hangi mod benim icin daha uygun?">Hangi mod?</button>
-      <button class="chip" data-prompt="CLAHE nasil calisir?">CLAHE nedir?</button>
-      <button class="chip" data-prompt="LAB renk uzayi neden kullaniliyor?">LAB neden?</button>
+    <div class="chat-body">
+      <div class="chat-suggestions" id="chatSuggestions">
+        <button class="chip" data-prompt="What do these metrics mean?">Interpret metrics</button>
+        <button class="chip" data-prompt="Which mode is best for my image?">Which mode?</button>
+        <button class="chip" data-prompt="How does CLAHE work?">What is CLAHE?</button>
+        <button class="chip" data-prompt="Why is LAB color space used?">Why LAB?</button>
+      </div>
+
+      <div class="chat-log" id="chatLog"></div>
+
+      <form class="chat-input-row" id="chatForm" autocomplete="off">
+        <input id="chatInput" type="text" placeholder="Type your question..." />
+        <button type="submit" id="chatSend">Send</button>
+      </form>
     </div>
-
-    <div class="chat-log" id="chatLog"></div>
-
-    <form class="chat-input-row" id="chatForm" autocomplete="off">
-      <input id="chatInput" type="text" placeholder="Sorunu yaz..." />
-      <button type="submit" id="chatSend">Gonder</button>
-    </form>
   </div>
+
+  <button class="chat-fab" id="chatFab" type="button" aria-label="Open Image Enhancement Assistant">
+    <svg class="icon-bubble" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </svg>
+    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
 
   <script>
     // If opened as a local file (double-click), redirect to the server
@@ -540,7 +632,7 @@
 
         uploadCard.classList.add('hidden');
         results.style.display = 'block';
-        showChatPanel({ mode: 'combined', metrics: m });
+        updateChatContext({ mode: 'combined', metrics: m });
       } catch (e) {
         console.error('Enhance failed:', e);
         errorMsg.textContent   = e.message || String(e);
@@ -571,7 +663,8 @@
     });
 
     // ---- Chat (Image Enhancement Assistant) -------------------------------
-    const chatCard   = document.getElementById('chatCard');
+    const chatFab    = document.getElementById('chatFab');
+    const chatPanel  = document.getElementById('chatPanel');
     const chatLog    = document.getElementById('chatLog');
     const chatForm   = document.getElementById('chatForm');
     const chatInput  = document.getElementById('chatInput');
@@ -582,7 +675,7 @@
     let chatContext = null;   // string: mode + metrics summary
     let chatBusy    = false;
 
-    function showChatPanel({ mode, metrics }) {
+    function updateChatContext({ mode, metrics }) {
       const parts = [`Mode used: ${mode}`];
       if (metrics) {
         const psnr = metrics.psnr_db;
@@ -595,14 +688,26 @@
         }
       }
       chatContext = parts.join(' | ');
-      chatCard.classList.add('visible');
+    }
+
+    function toggleChat(forceOpen) {
+      const willOpen = forceOpen !== undefined
+        ? forceOpen
+        : !chatPanel.classList.contains('open');
+      chatPanel.classList.toggle('open', willOpen);
+      chatFab.classList.toggle('open', willOpen);
+      chatFab.setAttribute(
+        'aria-label',
+        willOpen ? 'Close Image Enhancement Assistant' : 'Open Image Enhancement Assistant'
+      );
+      if (willOpen) setTimeout(() => chatInput.focus(), 50);
     }
 
     function resetChat() {
       chatHistory = [];
       chatContext = null;
       chatLog.innerHTML = '';
-      chatCard.classList.remove('visible');
+      toggleChat(false);
     }
 
     function appendMsg(role, text) {
@@ -661,11 +766,11 @@
         if (assistantText.trim()) {
           chatHistory.push({ role: 'assistant', content: assistantText });
         } else {
-          assistantNode.textContent = '[bos yanit]';
+          assistantNode.textContent = '[empty response]';
         }
       } catch (e) {
         console.error('Chat error:', e);
-        assistantNode.textContent = `[Hata] ${e.message || e}`;
+        assistantNode.textContent = `[Error] ${e.message || e}`;
       } finally {
         assistantNode.classList.remove('streaming');
         chatBusy = false;
@@ -674,6 +779,14 @@
         chatInput.focus();
       }
     }
+
+    chatFab.addEventListener('click', () => toggleChat());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && chatPanel.classList.contains('open')) {
+        toggleChat(false);
+      }
+    });
 
     chatForm.addEventListener('submit', (e) => {
       e.preventDefault();

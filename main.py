@@ -132,7 +132,7 @@ async def chat(req: ChatRequest):
     - **context**: opsiyonel oturum baglami (kullanilan mod, metrikler vb.)
     """
     if not req.messages:
-        raise HTTPException(status_code=400, detail="En az bir mesaj gereklidir.")
+        raise HTTPException(status_code=400, detail="At least one message is required.")
 
     payload = [{"role": m.role, "content": m.content} for m in req.messages]
 
@@ -141,8 +141,8 @@ async def chat(req: ChatRequest):
             async for chunk in stream_chat(payload, context=req.context):
                 yield chunk
         except RuntimeError as e:
-            yield f"\n[Hata] {e}"
+            yield f"\n[Error] {e}"
         except Exception as e:
-            yield f"\n[Hata] Sohbet servisine ulasilamadi: {e}"
+            yield f"\n[Error] Chat service unavailable: {e}"
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
