@@ -318,6 +318,7 @@
       const form = new FormData();
       form.append('file', selectedFile);
 
+      let lastEnhancedUrl = null;
       try {
         const res = await fetch('/enhance/metrics?mode=combined', {
           method: 'POST',
@@ -325,13 +326,24 @@
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || 'Server error');
+          let detail = `HTTP ${res.status}`;
+          try {
+            const err = await res.json();
+            detail = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+          } catch (_) {}
+          throw new Error(detail);
         }
 
         const data = await res.json();
 
-        enhImg.src = `data:image/jpeg;base64,${data.enhanced_image}`;
+        // base64 -> Blob -> blob URL (Safari data: URL boyut limitine takilmaz)
+        const bin = atob(data.enhanced_image);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'image/jpeg' });
+        if (lastEnhancedUrl) URL.revokeObjectURL(lastEnhancedUrl);
+        lastEnhancedUrl = URL.createObjectURL(blob);
+        enhImg.src = lastEnhancedUrl;
 
         const m = data.metrics;
         metricsRow.innerHTML = `
@@ -345,7 +357,8 @@
         uploadCard.classList.add('hidden');
         results.style.display = 'block';
       } catch (e) {
-        errorMsg.textContent   = e.message;
+        console.error('Enhance failed:', e);
+        errorMsg.textContent   = e.message || String(e);
         errorMsg.style.display = 'block';
       } finally {
         spinner.style.display = 'none';
