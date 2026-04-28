@@ -20,19 +20,17 @@ Divides the image into small tiles and equalizes the histogram of each tile inde
 ### `bilateral` — Bilateral Filtering
 A non-linear smoothing filter that preserves edges while reducing noise. Unlike Gaussian blur, it considers both spatial proximity and pixel intensity similarity — producing a "clean" look without losing structure.
 
-### `combined` — Full 6-Stage Enhancement Pipeline
-The maximum quality mode. No deep learning — pure signal processing:
+### `combined` — Face-Focused Enhancement Pipeline
+Designed for blurry / low-light face crops. Four stages:
 
 | Stage | Technique | Purpose |
 |-------|-----------|---------|
-| 1 | **Non-local Means Denoising** | Remove noise while preserving texture |
-| 2 | **MSRCR** (Multi-Scale Retinex with Color Restoration) | Fix uneven illumination + color casts |
-| 3 | **Percentile Stretch** | Maximize dynamic range (0–255) |
-| 4 | **FFT High-Boost Filter** | Frequency-domain sharpening at all detail scales |
-| 5 | **Adaptive Edge Sharpening** | Sharpen edges, keep flat areas smooth |
-| 6 | **CLAHE + Saturation Boost** | Final contrast and color polish |
+| 1 | **Non-local Means Denoising** (color-aware) | Remove noise while preserving texture |
+| 2 | **CLAHE on L channel** | Boost contrast without shifting hue |
+| 3 | **Unsharp mask** | Pull out edge / contour detail |
+| 4 | **FSRCNN x2 super-resolution** | 2× upscale via a tiny (~38 KB) ONNX-style model; falls back to bicubic if the model file is missing |
 
-> MSRCR is used in NASA satellite image processing and professional photo software to simultaneously correct dark regions, color casts, and low contrast.
+The FSRCNN weights are downloaded on first use to `models/FSRCNN_x2.pb`.
 
 ---
 

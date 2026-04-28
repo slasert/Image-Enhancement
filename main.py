@@ -33,7 +33,7 @@ def decode_image(data: bytes) -> np.ndarray:
     if max(h, w) > MAX_INPUT_DIM:
         scale = MAX_INPUT_DIM / max(h, w)
         img = cv2.resize(img, (int(w * scale), int(h * scale)),
-                         interpolation=cv2.INTER_AREA)
+                        interpolation=cv2.INTER_AREA)
     return img
 
 

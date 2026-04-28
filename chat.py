@@ -32,17 +32,15 @@ The app processes images through **3 enhancement modes**, all operating on the L
 - **Best for**: Noisy photos, detail preservation
 - **Speed**: Fast
 
-### Combined Mode (Professional)
-A 6-stage full pipeline:
-1. **Non-local Means Denoising** — Remove noise, keep texture
-2. **MSRCR** (Multi-Scale Retinex with Color Restoration) — Fix uneven lighting + color casts (used by NASA)
-3. **Percentile Stretch** — Maximize dynamic range (0–255)
-4. **FFT High-Boost Filter** — Frequency-domain sharpening
-5. **Adaptive Edge Sharpening** — Enhance edges, keep flat areas smooth
-6. **CLAHE + Saturation Boost** — Final polish
+### Combined Mode (Face-focused)
+A 4-stage pipeline tuned for blurry / low-light face crops:
+1. **Non-local Means Denoising** (color-aware) — Remove noise, keep texture
+2. **CLAHE on L channel** — Boost contrast without color shift
+3. **Unsharp mask** — Pull out edge / contour detail
+4. **FSRCNN x2 super-resolution** — 2× upscale via a tiny pretrained model; falls back to bicubic if the model is missing
 
-- **Best for**: Professional results, maximum quality
-- **Speed**: Slower
+- **Best for**: Low-resolution faces where you want both clarity and a larger output
+- **Speed**: Slower (super-resolution dominates)
 
 ## LAB Color Space
 
