@@ -1,3 +1,12 @@
+---
+title: Image Enhancement
+sdk: docker
+app_port: 7860
+colorFrom: indigo
+colorTo: purple
+pinned: false
+---
+
 # 🖼️ Image Enhancement API
 
 > A FastAPI-powered image enhancement application that processes images in **LAB color space** using classical computer vision techniques — no deep learning required.

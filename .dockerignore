@@ -1,0 +1,15 @@
+.env
+.claude/
+.git/
+.gitignore
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+start.bat
+.vscode/
+.idea/
+docs/
+src/
+train_all.py
+onnx_inference.py
