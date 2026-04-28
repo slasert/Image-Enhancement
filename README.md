@@ -11,6 +11,8 @@ pinned: false
 
 > A FastAPI-powered image enhancement application that processes images in **LAB color space** using classical computer vision techniques — no deep learning required.
 
+**Live demo:** https://sila0-image-enhancement.hf.space
+
 ---
 
 ## Overview
